@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role     @default(KARYAWAN)
+  isActive    Boolean  @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  createdBy   User?    @relation("UserCreations", fields: [createdById], references: [id])
+  createdById String?
+  createdUsers User[]   @relation("UserCreations")
+
+  documents    Document[]
+  folders      Folder[]
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+model Document {
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String
+  fileSize     Int
+  fileType     String
+  filePath     String
+  summary      String?
+  
+  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
+  uploadedById String
+  
+  folder       Folder?   @relation(fields: [folderId], references: [id])
+  folderId     String?
+  
+  createdAt    DateTime  @default(now())
+  
+  activityLogs ActivityLog[]
+
+  @@map("documents")
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  
+  documents Document[]
+  
+  createdAt DateTime @default(now())
+
+  @@map("folders")
+}
+
+model ActivityLog {
+  id        String      @id @default(cuid())
+  
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  
+  action    ActionType
+  details   String?
+  ipAddress String?
+  
+  document   Document?   @relation(fields: [documentId], references: [id])
+  documentId String?
+  
+  createdAt DateTime    @default(now())
+
+  @@map("activity_logs")
+}
+
+enum Role {
+  KARYAWAN
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ActionType {
+  LOGIN
+  LOGOUT
+  UPLOAD_DOCUMENT
+  DOWNLOAD_DOCUMENT
+  DELETE_DOCUMENT
+  CREATE_USER
+  UPDATE_USER_ROLE
+  TOGGLE_USER_STATUS
+}
