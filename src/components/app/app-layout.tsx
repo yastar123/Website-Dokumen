@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   File,
   Home,
@@ -12,7 +12,9 @@ import {
   Upload,
   Folder,
   BarChart,
-  FileLock2
+  FileLock2,
+  Search,
+  ChevronRight
 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -31,6 +33,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +45,7 @@ import {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const pathname = usePathname();
   
   return (
     <SidebarProvider>
@@ -99,14 +103,72 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
             <SidebarTrigger className="md:hidden"/>
-            <div className="flex-1">
-                {/* Add search bar or other header content here */}
+            <div className="flex flex-1 items-center gap-4">
+                <Breadcrumbs pathname={pathname} />
+                <div className="ml-auto flex items-center gap-4">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search documents..."
+                            className="pl-8 w-[200px] lg:w-[300px] bg-muted/50 border-0 focus-visible:ring-1"
+                        />
+                    </div>
+                </div>
             </div>
         </header>
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+function Breadcrumbs({ pathname }: { pathname: string }) {
+    const segments = pathname.split('/').filter(Boolean);
+    
+    const getBreadcrumbName = (segment: string) => {
+        const names: Record<string, string> = {
+            'dashboard': 'Dashboard',
+            'upload': 'Upload',
+            'folders': 'Folders',
+            'users': 'User Management',
+            'monitoring': 'Monitoring',
+            'profile': 'Profile'
+        };
+        return names[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+    };
+
+    if (segments.length === 0) return null;
+
+    return (
+        <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
+            <Link href="/dashboard" className="hover:text-foreground transition-colors">
+                Home
+            </Link>
+            {segments.map((segment, index) => {
+                const href = '/' + segments.slice(0, index + 1).join('/');
+                const isLast = index === segments.length - 1;
+                
+                return (
+                    <React.Fragment key={segment}>
+                        <ChevronRight className="h-4 w-4" />
+                        {isLast ? (
+                            <span className="text-foreground font-medium">
+                                {getBreadcrumbName(segment)}
+                            </span>
+                        ) : (
+                            <Link 
+                                href={href} 
+                                className="hover:text-foreground transition-colors"
+                            >
+                                {getBreadcrumbName(segment)}
+                            </Link>
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </nav>
+    );
 }
 
 function UserMenu() {
