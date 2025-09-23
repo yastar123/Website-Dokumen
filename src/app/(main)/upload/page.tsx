@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,25 @@ interface UploadFile {
 export default function UploadPage() {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string>("");
+  const [folders, setFolders] = useState<Array<{id: string; name: string}>>([]);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  useEffect(() => {
+    fetchFolders();
+  }, []);
+
+  const fetchFolders = async () => {
+    try {
+      const response = await fetch('/api/folders');
+      if (response.ok) {
+        const data = await response.json();
+        setFolders(data.folders || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch folders:', error);
+    }
+  };
 
   const onDrop = (acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map(file => ({
@@ -115,9 +132,11 @@ export default function UploadPage() {
   });
 
   const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
-    if (fileType === 'application/pdf') return <FileText className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
+    if (fileType.startsWith('image/')) return <Image className="h-4 w-4 text-green-600" />;
+    if (fileType === 'application/pdf') return <FileText className="h-4 w-4 text-red-600" />;
+    if (fileType.includes('word')) return <FileText className="h-4 w-4 text-blue-600" />;
+    if (fileType.includes('excel') || fileType.includes('spreadsheet')) return <FileText className="h-4 w-4 text-green-700" />;
+    return <File className="h-4 w-4 text-gray-600" />;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -150,9 +169,11 @@ export default function UploadPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">No folder</SelectItem>
-                    {/* TODO: Load folders from API */}
-                    <SelectItem value="documents">Documents</SelectItem>
-                    <SelectItem value="images">Images</SelectItem>
+                    {folders.map((folder) => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        {folder.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

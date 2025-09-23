@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
   File,
   Home,
@@ -46,6 +47,8 @@ import {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
   
   return (
     <SidebarProvider>
@@ -72,6 +75,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Upload">
                 <Link href="/upload"><Upload /><span>Upload</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Documents">
+                <Link href="/documents"><File /><span>Documents</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -106,14 +114,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex flex-1 items-center gap-4">
                 <Breadcrumbs pathname={pathname} />
                 <div className="ml-auto flex items-center gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <form 
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            if (searchQuery.trim()) {
+                                router.push(`/documents?q=${encodeURIComponent(searchQuery.trim())}`);
+                            } else {
+                                router.push('/documents');
+                            }
+                        }}
+                        className="relative"
+                    >
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <Input
                             type="search"
                             placeholder="Search documents..."
                             className="pl-8 w-[200px] lg:w-[300px] bg-muted/50 border-0 focus-visible:ring-1"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                    </div>
+                    </form>
                 </div>
             </div>
         </header>

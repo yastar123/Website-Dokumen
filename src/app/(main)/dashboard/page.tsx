@@ -80,9 +80,11 @@ export default function DashboardPage() {
   };
 
   const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
-    if (fileType === 'application/pdf') return <FileText className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
+    if (fileType.startsWith('image/')) return <Image className="h-4 w-4 text-green-600" />;
+    if (fileType === 'application/pdf') return <FileText className="h-4 w-4 text-red-600" />;
+    if (fileType.includes('word')) return <FileText className="h-4 w-4 text-blue-600" />;
+    if (fileType.includes('excel') || fileType.includes('spreadsheet')) return <FileText className="h-4 w-4 text-green-700" />;
+    return <File className="h-4 w-4 text-gray-600" />;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -99,6 +101,36 @@ export default function DashboardPage() {
     if (fileType.includes('word')) return 'Word Docs';
     if (fileType.includes('excel') || fileType.includes('spreadsheet')) return 'Spreadsheets';
     return 'Other';
+  };
+
+  const handleDownload = async (documentId: string, originalName: string) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/download`);
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = originalName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Download started",
+        description: `${originalName} is being downloaded`
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "Failed to download the document"
+      });
+    }
   };
 
   if (isLoading) {
@@ -199,12 +231,20 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Recent Documents</CardTitle>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/upload">
-                  <UploadIcon className="h-4 w-4 mr-2" />
-                  Upload New
-                </Link>
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/documents">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View All
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/upload">
+                    <UploadIcon className="h-4 w-4 mr-2" />
+                    Upload New
+                  </Link>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {stats.recentDocuments.length === 0 ? (
@@ -247,10 +287,15 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" title="View document">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          title="Download document"
+                          onClick={() => handleDownload(doc.id, doc.originalName)}
+                        >
                           <Download className="h-4 w-4" />
                         </Button>
                       </div>
