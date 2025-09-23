@@ -24,10 +24,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Build where clause based on user role
-    const baseWhere = user.role === 'SUPER_ADMIN' 
-      ? {} 
-      : { uploadedById: user.id };
+    // Build where clause: allow all roles to see all documents
+    // If you want to re-introduce restrictions later, adjust this baseWhere accordingly.
+    const baseWhere = {};
 
     // Add search filters
     const where = {

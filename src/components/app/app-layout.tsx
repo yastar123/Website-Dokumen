@@ -73,31 +73,37 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Upload">
-                <Link href="/upload"><Upload /><span>Upload</span></Link>
+              <SidebarMenuButton asChild tooltip="Unggah">
+                <Link href="/upload"><Upload /><span>Unggah</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Documents">
-                <Link href="/documents"><File /><span>Documents</span></Link>
+              <SidebarMenuButton asChild tooltip="Dokumen">
+                <Link href="/documents"><File /><span>Dokumen</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Folders">
-                <Link href="/folders"><Folder /><span>Folders</span></Link>
+              <SidebarMenuButton asChild tooltip="Folder">
+                <Link href="/folders"><Folder /><span>Folder</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Bantuan">
+                <Link href="/help"><File /><span>Bantuan</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
             {user?.role === 'SUPER_ADMIN' && (
               <>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="User Management">
-                    <Link href="/users"><Users /><span>Users</span></Link>
+                  <SidebarMenuButton asChild tooltip="Kelola Pengguna">
+                    <Link href="/users"><Users /><span>Pengguna</span></Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Monitoring">
-                    <Link href="/monitoring"><BarChart /><span>Monitoring</span></Link>
+                  <SidebarMenuButton asChild tooltip="Pemantauan">
+                    <Link href="/monitoring"><BarChart /><span>Pemantauan</span></Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </>
@@ -128,7 +134,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <Input
                             type="search"
-                            placeholder="Search documents..."
+                            placeholder="Cari dokumen..."
                             className="pl-8 w-[200px] lg:w-[300px] bg-muted/50 border-0 focus-visible:ring-1"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -149,11 +155,13 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
     const getBreadcrumbName = (segment: string) => {
         const names: Record<string, string> = {
             'dashboard': 'Dashboard',
-            'upload': 'Upload',
-            'folders': 'Folders',
-            'users': 'User Management',
-            'monitoring': 'Monitoring',
-            'profile': 'Profile'
+            'upload': 'Unggah',
+            'folders': 'Folder',
+            'users': 'Pengguna',
+            'monitoring': 'Pemantauan',
+            'profile': 'Profil',
+            'documents': 'Dokumen',
+            'help': 'Bantuan'
         };
         return names[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
     };
@@ -163,7 +171,7 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
     return (
         <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
             <Link href="/dashboard" className="hover:text-foreground transition-colors">
-                Home
+                Beranda
             </Link>
             {segments.map((segment, index) => {
                 const href = '/' + segments.slice(0, index + 1).join('/');

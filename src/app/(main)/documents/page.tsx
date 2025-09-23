@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Search,
   Download,
   Eye,
+  Edit,
+  Trash2,
   Filter,
   SortAsc,
   SortDesc,
@@ -68,6 +71,7 @@ export default function DocumentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
   const [folders, setFolders] = useState<Array<{id: string; name: string}>>([]);
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -135,27 +139,87 @@ export default function DocumentsPage() {
     }
   };
 
-
-  const handleDownload = async (document: Document) => {
+  const renameDocument = async (doc: Document) => {
+    const newName = window.prompt('Rename document', doc.originalName);
+    if (!newName || newName.trim() === doc.originalName) return;
     try {
-      const response = await fetch(`/api/documents/${document.id}/download`);
+      const res = await fetch(`/api/documents/${doc.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ originalName: newName.trim() }),
+      });
+      if (!res.ok) throw new Error('Failed to rename');
+      toast({ title: 'Renamed', description: 'Document name updated' });
+      searchDocuments();
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to rename document' });
+    }
+  };
+
+  const deleteDocument = async (doc: Document) => {
+    if (!window.confirm(`Delete document "${doc.originalName}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/documents/${doc.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      toast({ title: 'Deleted', description: 'Document removed' });
+      searchDocuments();
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete document' });
+    }
+  };
+
+  const renderPreview = () => {
+    if (!previewDoc) return null;
+    const isImage = previewDoc.fileType.startsWith('image/');
+    const isPdf = previewDoc.fileType === 'application/pdf';
+    const anyDoc: any = previewDoc as any;
+    const src = (anyDoc.filePath as string | undefined) || `/uploads/${anyDoc.filename || ''}`;
+    return (
+      <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Preview: {previewDoc.originalName}</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-[400px]">
+            {isImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={src} alt={previewDoc.originalName} className="max-h-[70vh] w-auto mx-auto" />
+            )}
+            {isPdf && (
+              <object data={src} type="application/pdf" className="w-full h-[70vh]">
+                <p>PDF preview is not available. <a href={src} target="_blank" rel="noreferrer">Open</a></p>
+              </object>
+            )}
+            {!isImage && !isPdf && (
+              <div className="text-sm text-muted-foreground">No inline preview available for this file type.</div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+
+  const handleDownload = async (doc: Document) => {
+    try {
+      const response = await fetch(`/api/documents/${doc.id}/download`);
       if (!response.ok) {
         throw new Error('Download failed');
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = window.document.createElement('a');
       a.href = url;
-      a.download = document.originalName;
-      document.body.appendChild(a);
+      a.download = doc.originalName;
+      window.document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
 
       toast({
         title: "Download started",
-        description: `${document.originalName} is being downloaded`
+        description: `${doc.originalName} is being downloaded`
       });
     } catch (error) {
       toast({
@@ -224,7 +288,7 @@ export default function DocumentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline">{pagination?.totalCount || 0} documents</Badge>
           <Button
             variant="outline"
@@ -269,14 +333,14 @@ export default function DocumentsPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">File Type</label>
               <Select value={fileTypeFilter} onValueChange={(value) => {
-                setFileTypeFilter(value);
+                setFileTypeFilter(value === "all" ? "" : value);
                 setCurrentPage(1);
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="image/">Images</SelectItem>
                   <SelectItem value="application/pdf">PDFs</SelectItem>
                   <SelectItem value="application/msword">Word Documents</SelectItem>
@@ -288,14 +352,14 @@ export default function DocumentsPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Folder</label>
               <Select value={folderFilter} onValueChange={(value) => {
-                setFolderFilter(value);
+                setFolderFilter(value === "all" ? "" : value);
                 setCurrentPage(1);
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="All folders" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All folders</SelectItem>
+                  <SelectItem value="all">All folders</SelectItem>
                   {folders.map((folder) => (
                     <SelectItem key={folder.id} value={folder.id}>
                       {folder.name}
@@ -330,7 +394,7 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 <Filter className="h-4 w-4 mr-2" />
@@ -429,9 +493,19 @@ export default function DocumentsPage() {
                           <Download className="h-3 w-3 mr-1" />
                           Download
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)}>
                           <Eye className="h-3 w-3" />
                         </Button>
+                        {user?.role === 'SUPER_ADMIN' && (
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => renameDocument(doc)} title="Rename">
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => deleteDocument(doc)} title="Delete">
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -443,7 +517,7 @@ export default function DocumentsPage() {
               <CardContent className="p-0">
                 <div className="divide-y">
                   {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                    <div key={doc.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center space-x-3 min-w-0 flex-1">
                         {getFileIcon(doc.fileType)}
                         <div className="min-w-0 flex-1">
@@ -466,16 +540,26 @@ export default function DocumentsPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs">
                           {getFileTypeLabel(doc.fileType)}
                         </Badge>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDownload(doc)}>
                           <Download className="h-4 w-4" />
                         </Button>
+                        {user?.role === 'SUPER_ADMIN' && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => renameDocument(doc)} title="Rename">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => deleteDocument(doc)} title="Delete">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -517,6 +601,7 @@ export default function DocumentsPage() {
               </div>
             </div>
           )}
+          {renderPreview()}
         </>
       )}
     </div>

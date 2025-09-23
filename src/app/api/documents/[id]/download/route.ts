@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify authentication
@@ -20,9 +20,12 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
+    // Resolve dynamic route params (Next.js 15)
+    const { id } = await params;
+
     // Find the document
     const document = await prisma.document.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { uploadedBy: true },
     });
 
@@ -30,10 +33,7 @@ export async function GET(
       return NextResponse.json({ message: 'Document not found' }, { status: 404 });
     }
 
-    // Check permissions - users can only download their own files unless admin
-    if (user.role !== 'SUPER_ADMIN' && document.uploadedById !== user.id) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    // All roles are allowed to download any document
 
     // Construct file path
     const filePath = join(process.cwd(), 'public', 'uploads', document.filename);

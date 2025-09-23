@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import { verifyJwt } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
@@ -10,7 +12,7 @@ const updateFolderSchema = z.object({
 // PUT /api/folders/[id] - Update folder name
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -33,7 +35,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { name } = validation.data;
 
     // Check if folder exists and user has permission
@@ -49,10 +51,10 @@ export async function PUT(
       );
     }
 
-    // Check ownership (or if user is admin)
-    if (existingFolder.userId !== user.id && user.role !== 'SUPER_ADMIN') {
+    // Only SUPER_ADMIN can update folders
+    if (user.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
-        { message: 'You can only edit your own folders' },
+        { message: 'Forbidden' },
         { status: 403 }
       );
     }
@@ -106,7 +108,7 @@ export async function PUT(
 // DELETE /api/folders/[id] - Delete folder
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -119,7 +121,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check if folder exists and user has permission
     const existingFolder = await prisma.folder.findUnique({
@@ -140,26 +142,30 @@ export async function DELETE(
       );
     }
 
-    // Check ownership (or if user is admin)
-    if (existingFolder.userId !== user.id && user.role !== 'SUPER_ADMIN') {
+    // Only SUPER_ADMIN can delete folders
+    if (user.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
-        { message: 'You can only delete your own folders' },
+        { message: 'Forbidden' },
         { status: 403 }
       );
     }
 
-    // Check if folder has documents
+    // If folder has documents, delete them (DB + disk)
     if (existingFolder._count.documents > 0) {
-      return NextResponse.json(
-        { message: 'Cannot delete folder that contains documents. Move or delete documents first.' },
-        { status: 400 }
-      );
+      const docs = await prisma.document.findMany({ where: { folderId: id } });
+      for (const doc of docs) {
+        try {
+          await prisma.document.delete({ where: { id: doc.id } });
+        } catch (_) {}
+        try {
+          const filePath = join(process.cwd(), 'public', 'uploads', doc.filename);
+          await unlink(filePath);
+        } catch (_) {}
+      }
     }
 
     // Delete folder
-    await prisma.folder.delete({
-      where: { id }
-    });
+    await prisma.folder.delete({ where: { id } });
 
     return NextResponse.json({
       message: 'Folder deleted successfully'

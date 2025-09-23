@@ -95,7 +95,9 @@ export async function GET(request: NextRequest) {
         fileSize: doc.fileSize,
         createdAt: doc.createdAt,
         uploadedBy: doc.uploadedBy,
-        folder: doc.folder
+        folder: doc.folder,
+        filename: (doc as any).filename,
+        filePath: (doc as any).filePath,
       })),
       documentsByType: documentsByType.map(item => ({
         type: item.fileType,

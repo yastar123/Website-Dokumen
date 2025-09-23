@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Get folders for current user (or all if admin)
+    // Tampilkan semua folder untuk semua role
     const folders = await prisma.folder.findMany({
-      where: user.role === 'SUPER_ADMIN' ? {} : { userId: user.id },
+      where: {},
       include: {
         user: {
           select: { name: true, email: true }

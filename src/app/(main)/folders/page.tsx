@@ -200,7 +200,7 @@ export default function FoldersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Folders</h1>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -255,55 +255,62 @@ export default function FoldersPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {folders.map((folder) => (
             <Card key={folder.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center space-x-2 min-w-0">
                     <Folder className="h-5 w-5 text-blue-500" />
                     <CardTitle className="text-lg truncate">{folder.name}</CardTitle>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => openEditDialog(folder)}>
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => setDeletingFolder(folder)}
-                        className="text-destructive focus:text-destructive"
-                        disabled={folder._count.documents > 0}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {user?.role === 'SUPER_ADMIN' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => openEditDialog(folder)}>
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => setDeletingFolder(folder)}
+                          className="text-destructive focus:text-destructive"
+                          disabled={folder._count.documents > 0}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm">
                     <div className="flex items-center space-x-1 text-muted-foreground">
                       <FileText className="h-4 w-4" />
                       <span>{folder._count.documents} documents</span>
                     </div>
-                    {folder._count.documents > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {folder._count.documents > 0 && (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/folders/${folder.id}`}>View</Link>
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/folders/${folder.id}`}>View</Link>
+                        <Link href={`/api/folders/${folder.id}/download`}>Download</Link>
                       </Button>
-                    )}
+                    </div>
                   </div>
                   
-                  <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-3 w-3" />
                       <span>{formatDistanceToNow(new Date(folder.createdAt), { addSuffix: true })}</span>

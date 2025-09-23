@@ -128,7 +128,7 @@ export default function UploadPage() {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
       'text/plain': ['.txt'],
     },
-    maxFileSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 10 * 1024 * 1024, // 10MB
   });
 
   const getFileIcon = (fileType: string) => {
@@ -149,7 +149,7 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Upload Documents</h1>
         <Badge variant="secondary">{user?.name}</Badge>
       </div>
@@ -163,12 +163,12 @@ export default function UploadPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="folder">Select Folder (Optional)</Label>
-                <Select value={selectedFolder} onValueChange={setSelectedFolder}>
+                <Select value={selectedFolder} onValueChange={(value) => setSelectedFolder(value === "none" ? "" : value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a folder" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No folder</SelectItem>
+                    <SelectItem value="none">No folder</SelectItem>
                     {folders.map((folder) => (
                       <SelectItem key={folder.id} value={folder.id}>
                         {folder.name}
@@ -211,7 +211,7 @@ export default function UploadPage() {
               <CardContent>
                 <div className="space-y-3">
                   {uploadFiles.map((uploadFile) => (
-                    <div key={uploadFile.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <div key={uploadFile.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg">
                       <div className="flex-shrink-0">
                         {getFileIcon(uploadFile.file.type)}
                       </div>
@@ -224,7 +224,7 @@ export default function UploadPage() {
                           <Progress value={uploadFile.progress} className="mt-1" />
                         )}
                       </div>
-                      <div className="flex-shrink-0 flex items-center space-x-2">
+                      <div className="flex-shrink-0 flex items-center space-x-2 flex-wrap">
                         {uploadFile.status === 'success' && (
                           <CheckCircle className="h-5 w-5 text-green-500" />
                         )}

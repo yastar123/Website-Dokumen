@@ -228,7 +228,7 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -320,16 +320,16 @@ export default function UsersPage() {
         <CardHeader>
           <CardTitle>All Users ({users.length})</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="overflow-x-auto">
+          <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Documents</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead className="hidden md:table-cell">Documents</TableHead>
+                <TableHead className="hidden sm:table-cell">Last Login</TableHead>
+                <TableHead className="hidden md:table-cell">Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -346,13 +346,13 @@ export default function UsersPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {getRoleIcon(user.role)}
                       {getRoleBadge(user.role)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Switch
                         checked={user.isActive}
                         onCheckedChange={(checked) => toggleUserStatus(user.id, checked)}
@@ -363,14 +363,14 @@ export default function UsersPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
+                  <TableCell className="hidden md:table-cell">
+                    <div className="flex items-center gap-1">
                       <FileText className="h-4 w-4" />
                       <span>{user._count.documents}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
+                  <TableCell className="hidden sm:table-cell">
+                    <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       <span className="text-sm">
                         {user.lastLogin
@@ -380,7 +380,7 @@ export default function UsersPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <span className="text-sm">
                       {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })}
                     </span>

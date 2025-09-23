@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface DashboardStats {
   documentsCount: number;
@@ -53,6 +54,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewDoc, setPreviewDoc] = useState<DashboardStats["recentDocuments"][number] | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -77,6 +79,43 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderPreview = () => {
+    if (!previewDoc) return null;
+    // we don't have filename here; rely on a standard path if provided by API in future
+    // Attempt to preview by hitting a public path using id is not possible; so we cannot generate preview src reliably.
+    // However, if backend includes filePath in recentDocuments later, we can use it. For now, try fallback to /api/documents/[id]/download in object/embed which most browsers won't allow inline.
+    // We'll check by mime type; only allow inline for images/pdf if path is known on client via /uploads mapping.
+    const anyDoc: any = previewDoc as any;
+    const src: string | null = anyDoc.filePath ? anyDoc.filePath : null;
+    const isImage = previewDoc.fileType.startsWith('image/');
+    const isPdf = previewDoc.fileType === 'application/pdf';
+    return (
+      <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Preview: {previewDoc.originalName}</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-[300px]">
+            {src && isImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={src} alt={previewDoc.originalName} className="max-h-[70vh] w-auto mx-auto" />
+            )}
+            {src && isPdf && (
+              <object data={src} type="application/pdf" className="w-full h-[70vh]">
+                <p>PDF preview is not available. <a href={src} target="_blank" rel="noreferrer">Open</a></p>
+              </object>
+            )}
+            {(!src || (!isImage && !isPdf)) && (
+              <div className="text-sm text-muted-foreground">
+                Preview not available here. Please go to the Documents page and use the preview there.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   const getFileIcon = (fileType: string) => {
@@ -112,13 +151,13 @@ export default function DashboardPage() {
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = window.document.createElement('a');
       a.href = url;
       a.download = originalName;
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
 
       toast({
         title: "Download started",
@@ -160,9 +199,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Badge variant="outline">Welcome, {user?.name}</Badge>
         </div>
       </div>
@@ -229,9 +268,9 @@ export default function DashboardPage() {
         {/* Recent Documents */}
         <div className="md:col-span-2">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Recent Documents</CardTitle>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/documents">
                     <Eye className="h-4 w-4 mr-2" />
@@ -259,12 +298,12 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-4">
                   {stats.recentDocuments.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
+                    <div key={doc.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
                         {getFileIcon(doc.fileType)}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{doc.originalName}</p>
-                          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                             <span>{formatFileSize(doc.fileSize)}</span>
                             <span>•</span>
                             <span>{formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true })}</span>
@@ -286,8 +325,8 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" title="View document">
+                      <div className="flex items-center space-x-2 flex-wrap">
+                        <Button variant="ghost" size="sm" title="View document" onClick={() => setPreviewDoc(doc)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -320,7 +359,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {stats.documentsByType.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                    <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center space-x-2">
                         {getFileIcon(item.type)}
                         <span className="text-sm">{getFileTypeLabel(item.type)}</span>
@@ -343,8 +382,8 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {stats.recentActivity.slice(0, 5).map((activity) => (
                     <div key={activity.id} className="text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{activity.user.name}</span>
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="font-medium truncate">{activity.user.name}</span>
                         <span className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
                         </span>
@@ -361,6 +400,7 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      {renderPreview()}
     </div>
   );
 }
