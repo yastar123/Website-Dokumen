@@ -8,10 +8,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Allow all hosts for Replit proxy environment
-  experimental: {
-    allowedHosts: true,
-  },
   images: {
     remotePatterns: [
       {
