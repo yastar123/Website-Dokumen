@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Allow cross-origin requests for Replit proxy environment
+  async rewrites() {
+    return [];
+  },
   images: {
     remotePatterns: [
       {
