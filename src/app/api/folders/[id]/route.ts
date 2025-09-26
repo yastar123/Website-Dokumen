@@ -12,7 +12,7 @@ const updateFolderSchema = z.object({
 // PUT /api/folders/[id] - Update folder name
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -35,7 +35,7 @@ export async function PUT(
       );
     }
 
-    const { id } = await params;
+    const { id } = params;
     const { name } = validation.data;
 
     // Check if folder exists and user has permission
@@ -108,20 +108,19 @@ export async function PUT(
 // DELETE /api/folders/[id] - Delete folder
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-
     const user = await verifyJwt(token);
     if (!user) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = params;
 
     // Check if folder exists and user has permission
     const existingFolder = await prisma.folder.findUnique({

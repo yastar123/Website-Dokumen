@@ -9,7 +9,7 @@ import { PassThrough } from 'stream';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -21,7 +21,7 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = params;
 
     const folder = await prisma.folder.findUnique({
       where: { id },

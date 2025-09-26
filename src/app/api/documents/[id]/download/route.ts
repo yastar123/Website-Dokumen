@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Verify authentication
@@ -20,8 +20,8 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Resolve dynamic route params (Next.js 15)
-    const { id } = await params;
+    // Dynamic route params
+    const { id } = params;
 
     // Find the document
     const document = await prisma.document.findUnique({

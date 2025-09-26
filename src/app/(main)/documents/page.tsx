@@ -67,7 +67,7 @@ export default function DocumentsPage() {
   const [folderFilter, setFolderFilter] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
   const [folders, setFolders] = useState<Array<{id: string; name: string}>>([]);
@@ -129,11 +129,8 @@ export default function DocumentsPage() {
       setDocuments(data.documents);
       setPagination(data.pagination);
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load documents"
-      });
+      // Avoid noisy toast during background refreshes; log instead
+      console.error('Failed to load documents', error);
     } finally {
       setIsLoading(false);
     }
@@ -160,11 +157,22 @@ export default function DocumentsPage() {
     if (!window.confirm(`Delete document "${doc.originalName}"? This cannot be undone.`)) return;
     try {
       const res = await fetch(`/api/documents/${doc.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete');
+      if (!res.ok) {
+        let message = 'Failed to delete';
+        try {
+          const data = await res.json();
+          if (data?.message) message = data.message;
+        } catch (_) {}
+        throw new Error(message);
+      }
+      // Optimistic UI: remove from list immediately
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
       toast({ title: 'Deleted', description: 'Document removed' });
+      // Refresh in background without noisy toasts
       searchDocuments();
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete document' });
+      const msg = e instanceof Error ? e.message : 'Failed to delete document';
+      toast({ variant: 'destructive', title: 'Error', description: msg });
     }
   };
 

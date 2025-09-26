@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import type { DecodedJwtPayload } from '@/types';
+import { z } from 'zod';
 
 const getJwtSecretKey = () => {
   const secret = process.env.JWT_SECRET;
@@ -23,7 +24,23 @@ export async function verifyJwt(token: string): Promise<DecodedJwtPayload | null
   try {
     const secret = getJwtSecretKey();
     const { payload } = await jwtVerify(token, secret);
-    return payload as DecodedJwtPayload;
+
+    const jwtPayloadSchema = z.object({
+      id: z.string(),
+      email: z.string().email(),
+      name: z.string(),
+      role: z.enum(['KARYAWAN', 'ADMIN', 'SUPER_ADMIN']),
+      iat: z.number().optional(),
+      exp: z.number().optional(),
+    });
+
+    const parsed = jwtPayloadSchema.safeParse(payload);
+    if (!parsed.success) return null;
+
+    // Ensure iat/exp exist as numbers; if absent, reject
+    if (parsed.data.iat === undefined || parsed.data.exp === undefined) return null;
+
+    return parsed.data as DecodedJwtPayload;
   } catch (error) {
     return null;
   }

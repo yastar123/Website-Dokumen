@@ -83,10 +83,17 @@ export async function PUT(
     });
 
     // Log activity
-    const changes = Object.entries(updateData)
-      .filter(([key, value]) => existingUser[key as keyof typeof existingUser] !== value)
-      .map(([key, value]) => `${key}: ${existingUser[key as keyof typeof existingUser]} → ${value}`)
-      .join(', ');
+    const changeParts: string[] = [];
+    if (updateData.name !== undefined && updateData.name !== existingUser.name) {
+      changeParts.push(`name: ${existingUser.name} → ${updateData.name}`);
+    }
+    if (updateData.role !== undefined && updateData.role !== existingUser.role) {
+      changeParts.push(`role: ${existingUser.role} → ${updateData.role}`);
+    }
+    if (updateData.isActive !== undefined && updateData.isActive !== existingUser.isActive) {
+      changeParts.push(`isActive: ${existingUser.isActive} → ${updateData.isActive}`);
+    }
+    const changes = changeParts.join(', ');
 
     if (changes) {
       await prisma.activityLog.create({
