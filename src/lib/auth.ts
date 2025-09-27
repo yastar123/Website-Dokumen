@@ -29,6 +29,7 @@ export async function verifyJwt(token: string): Promise<DecodedJwtPayload | null
       id: z.string(),
       email: z.string().email(),
       name: z.string(),
+      avatarUrl: z.string().optional(),
       role: z.enum(['KARYAWAN', 'ADMIN', 'SUPER_ADMIN']),
       iat: z.number().optional(),
       exp: z.number().optional(),
@@ -45,3 +46,4 @@ export async function verifyJwt(token: string): Promise<DecodedJwtPayload | null
     return null;
   }
 }
+

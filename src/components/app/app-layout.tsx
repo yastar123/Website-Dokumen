@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
 import {
@@ -54,23 +55,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar className="border-r border-border/40 backdrop-blur-md bg-background/95 supports-[backdrop-filter]:bg-background/60">
         <SidebarHeader className="border-b border-border/40 bg-gradient-to-r from-primary/5 to-primary/10">
-          <div className="flex items-center gap-3 p-4">
+          <div className="flex items-center gap-3 p-3 md:p-4">
             <div className="relative group">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="shrink-0 text-primary bg-gradient-to-br from-primary/10 to-primary/20 hover:from-primary/20 hover:to-primary/30 border border-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-md hover:shadow-primary/20"
-              >
-                <FileLock2 className="transition-transform duration-300 group-hover:rotate-12"/>
-              </Button>
+                <Image src="/logo.png" alt="Logo" width={160} height={160} priority className="w-16 h-auto sm:w-24 md:w-32" />
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/40 rounded-lg blur opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold tracking-tight text-sidebar-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-                SecureDocs
+                SEIIKI
               </span>
               <span className="text-xs text-muted-foreground/80">
-                Document Management
+              PT. SOLUSI ENERGI KELISTRIKAN INDONESIA
               </span>
             </div>
           </div>
@@ -96,12 +91,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton 
                 asChild 
                 tooltip="Unggah"
-                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-emerald-500/10 hover:to-emerald-500/5 hover:shadow-sm hover:border-emerald-500/20 active:scale-95"
+                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/5 hover:shadow-sm hover:border-accent/20 active:scale-95"
               >
                 <Link href="/upload" className="flex items-center gap-3">
-                  <Upload className="transition-all duration-300 group-hover:scale-110 group-hover:text-emerald-500 group-hover:-translate-y-0.5" />
+                  <Upload className="transition-all duration-300 group-hover:scale-110 group-hover:text-accent group-hover:-translate-y-0.5" />
                   <span className="transition-all duration-300 group-hover:translate-x-1 group-hover:font-medium">Unggah</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -110,12 +105,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton 
                 asChild 
                 tooltip="Dokumen"
-                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-blue-500/5 hover:shadow-sm hover:border-blue-500/20 active:scale-95"
+                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/5 hover:shadow-sm hover:border-accent/20 active:scale-95"
               >
                 <Link href="/documents" className="flex items-center gap-3">
-                  <File className="transition-all duration-300 group-hover:scale-110 group-hover:text-blue-500" />
+                  <File className="transition-all duration-300 group-hover:scale-110 group-hover:text-accent" />
                   <span className="transition-all duration-300 group-hover:translate-x-1 group-hover:font-medium">Dokumen</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -124,12 +119,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton 
                 asChild 
                 tooltip="Folder"
-                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-500/10 hover:to-amber-500/5 hover:shadow-sm hover:border-amber-500/20 active:scale-95"
+                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-secondary/10 hover:to-secondary/5 hover:shadow-sm hover:border-secondary/20 active:scale-95"
               >
                 <Link href="/folders" className="flex items-center gap-3">
-                  <Folder className="transition-all duration-300 group-hover:scale-110 group-hover:text-amber-500" />
+                  <Folder className="transition-all duration-300 group-hover:scale-110 group-hover:text-secondary" />
                   <span className="transition-all duration-300 group-hover:translate-x-1 group-hover:font-medium">Folder</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -138,12 +133,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton 
                 asChild 
                 tooltip="Bantuan"
-                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-purple-500/5 hover:shadow-sm hover:border-purple-500/20 active:scale-95"
+                className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-secondary/10 hover:to-secondary/5 hover:shadow-sm hover:border-secondary/20 active:scale-95"
               >
                 <Link href="/help" className="flex items-center gap-3">
-                  <File className="transition-all duration-300 group-hover:scale-110 group-hover:text-purple-500" />
+                  <File className="transition-all duration-300 group-hover:scale-110 group-hover:text-secondary" />
                   <span className="transition-all duration-300 group-hover:translate-x-1 group-hover:font-medium">Bantuan</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -159,12 +154,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <SidebarMenuButton 
                     asChild 
                     tooltip="Kelola Pengguna"
-                    className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-red-500/10 hover:to-red-500/5 hover:shadow-sm hover:border-red-500/20 active:scale-95"
+                    className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-sm hover:border-primary/20 active:scale-95"
                   >
                     <Link href="/users" className="flex items-center gap-3">
-                      <Users className="transition-all duration-300 group-hover:scale-110 group-hover:text-red-500" />
+                      <Users className="transition-all duration-300 group-hover:scale-110 group-hover:text-primary" />
                       <span className="transition-all duration-300 group-hover:translate-x-1 group-hover:font-medium">Pengguna</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -173,12 +168,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <SidebarMenuButton 
                     asChild 
                     tooltip="Pemantauan"
-                    className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-indigo-500/10 hover:to-indigo-500/5 hover:shadow-sm hover:border-indigo-500/20 active:scale-95"
+                    className="group relative overflow-hidden transition-all duration-300 hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/5 hover:shadow-sm hover:border-accent/20 active:scale-95"
                   >
                     <Link href="/monitoring" className="flex items-center gap-3">
-                      <BarChart className="transition-all duration-300 group-hover:scale-110 group-hover:text-indigo-500" />
+                      <BarChart className="transition-all duration-300 group-hover:scale-110 group-hover:text-accent" />
                       <span className="transition-all duration-300 group-hover:translate-x-1 group-hover:font-medium">Pemantauan</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -193,11 +188,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       
       <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b border-border/40 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
+        <header className="flex h-14 items-center gap-2 sm:gap-4 border-b border-border/40 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 px-2 sm:px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
             <SidebarTrigger className="md:hidden transition-all duration-200 hover:bg-muted/80 hover:scale-105"/>
-            <div className="flex flex-1 items-center gap-4">
+            <div className="flex flex-1 items-center gap-2 sm:gap-4 min-w-0">
                 <Breadcrumbs pathname={pathname} />
-                <div className="ml-auto flex items-center gap-4">
+                <div className="ml-auto flex items-center gap-2 sm:gap-4">
                     <form 
                         onSubmit={(e) => {
                             e.preventDefault();
@@ -213,7 +208,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <Input
                             type="search"
                             placeholder="Cari dokumen..."
-                            className="pl-10 w-[200px] lg:w-[300px] bg-muted/30 border-0 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:bg-background/80 transition-all duration-300 hover:bg-muted/50 focus-visible:shadow-lg focus-visible:shadow-primary/10"
+                            className="pl-10 w-[140px] sm:w-[200px] lg:w-[300px] bg-muted/30 border-0 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:bg-background/80 transition-all duration-300 hover:bg-muted/50 focus-visible:shadow-lg focus-visible:shadow-primary/10"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -248,7 +243,7 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
     if (segments.length === 0) return null;
 
     return (
-        <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
+        <nav className="flex items-center space-x-1 text-sm text-muted-foreground overflow-x-auto whitespace-nowrap min-w-0 pr-2 [&::-webkit-scrollbar]:hidden scrollbar-hide">
             <Link 
                 href="/dashboard" 
                 className="hover:text-foreground transition-all duration-200 hover:font-medium relative group px-1 py-0.5 rounded"
@@ -318,7 +313,7 @@ function UserMenu() {
                 >
                     <div className="relative">
                         <Avatar className="h-10 w-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:shadow-primary/20">
-                            <AvatarImage src={`https://avatar.vercel.sh/${user.email}.png`} alt={user.name} />
+                            <AvatarImage src={user.avatarUrl || `https://avatar.vercel.sh/${user.email}.png`} alt={user.name} />
                             <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
                                 {getInitials(user.name)}
                             </AvatarFallback>

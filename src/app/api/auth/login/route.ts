@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { comparePasswords } from '@/lib/password';
+import { comparePasswords, hashPassword } from '@/lib/password';
 import { signJwt } from '@/lib/auth';
 import { z } from 'zod';
 
@@ -20,6 +20,25 @@ export async function POST(request: Request) {
 
     const { email, password } = validation.data;
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Ensure default SUPER ADMIN exists (idempotent)
+    const superAdminEmail = 'superadmin@gmail.com';
+    if (normalizedEmail === superAdminEmail) {
+      await prisma.user.upsert({
+        where: { email: superAdminEmail },
+        update: {
+          role: 'SUPER_ADMIN',
+          isActive: true,
+        },
+        create: {
+          name: 'Super Admin',
+          email: superAdminEmail,
+          password: await hashPassword('11111111'),
+          role: 'SUPER_ADMIN',
+          isActive: true,
+        },
+      });
+    }
 
     const user = await prisma.user.findFirst({
       where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
@@ -49,10 +68,18 @@ export async function POST(request: Request) {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    const token = await signJwt(userWithoutPassword);
+    const payload = {
+      id: userWithoutPassword.id,
+      email: userWithoutPassword.email,
+      name: userWithoutPassword.name,
+      role: userWithoutPassword.role,
+      avatarUrl: (userWithoutPassword as any).avatarUrl || undefined,
+    } as any;
+
+    const token = await signJwt(payload);
 
     const response = NextResponse.json(
-      { message: 'Login successful', user: userWithoutPassword },
+      { message: 'Login successful', user: payload },
       { status: 200 }
     );
 
