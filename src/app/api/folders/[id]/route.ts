@@ -149,29 +149,35 @@ export async function DELETE(
       );
     }
 
-    // If folder has documents, delete them (DB + disk)
-    if (existingFolder._count.documents > 0) {
-      const docs = await prisma.document.findMany({ where: { folderId: id } });
-      for (const doc of docs) {
-        try {
-          await prisma.document.delete({ where: { id: doc.id } });
-        } catch (_) {}
-        try {
-          const filePath = join(process.cwd(), 'public', 'uploads', doc.filename);
-          await unlink(filePath);
-        } catch (_) {}
+    // Collect documents to remove files later
+    const docs = await prisma.document.findMany({ where: { folderId: id }, select: { id: true, filename: true } });
+
+    // Build a single transaction that clears ActivityLogs -> Documents -> Folder
+    await prisma.$transaction([
+      // delete activity logs linked to any document in this folder
+      prisma.activityLog.deleteMany({ where: { documentId: { in: docs.map(d => d.id) } } }),
+      // delete documents in this folder
+      prisma.document.deleteMany({ where: { folderId: id } }),
+      // finally delete the folder itself
+      prisma.folder.delete({ where: { id } }),
+    ]);
+
+    // After DB commit, best-effort delete files on disk
+    for (const doc of docs) {
+      try {
+        const filePath = join(process.cwd(), 'public', 'uploads', doc.filename);
+        await unlink(filePath);
+      } catch (e) {
+        // ignore missing files or fs errors
       }
     }
-
-    // Delete folder
-    await prisma.folder.delete({ where: { id } });
 
     return NextResponse.json({
       message: 'Folder deleted successfully'
     });
 
   } catch (error) {
-    console.error('Delete folder error:', error);
+    console.error('Delete folder error:', error instanceof Error ? error.message : error);
     return NextResponse.json(
       { message: 'Failed to delete folder' },
       { status: 500 }

@@ -281,7 +281,6 @@ export default function FoldersPage() {
                         <DropdownMenuItem 
                           onClick={() => setDeletingFolder(folder)}
                           className="text-destructive focus:text-destructive"
-                          disabled={folder._count.documents > 0}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
@@ -367,18 +366,14 @@ export default function FoldersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Folder</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the folder "{deletingFolder?.name}"? 
-              {deletingFolder?._count.documents === 0 
-                ? "This action cannot be undone."
-                : "This folder contains documents and cannot be deleted. Move or delete the documents first."
-              }
+              Are you sure you want to delete the folder "{deletingFolder?.name}"?
+              This action will also permanently delete all documents inside this folder. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={onDeleteFolder}
-              disabled={deletingFolder?._count.documents ? deletingFolder._count.documents > 0 : false}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

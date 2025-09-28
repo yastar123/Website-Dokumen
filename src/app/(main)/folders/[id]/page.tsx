@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DocumentThumbnail from "@/components/documents/document-thumbnail";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface DocumentItem {
   id: string;
@@ -64,6 +65,7 @@ export default function FolderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!folderId) return;
@@ -106,6 +108,17 @@ export default function FolderDetailPage() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Keep file extension, truncate base name nicely for UI
+  const shortenFileName = (name: string, max = 28) => {
+    if (!name) return '';
+    const dot = name.lastIndexOf('.');
+    const hasExt = dot > 0 && dot < name.length - 1;
+    const base = hasExt ? name.slice(0, dot) : name;
+    const ext = hasExt ? name.slice(dot) : '';
+    if (base.length <= max) return name; // no need to cut
+    return base.slice(0, Math.max(0, max - 3)) + '...' + ext;
   };
 
   const handleDownload = async (doc: DocumentItem) => {
@@ -152,6 +165,43 @@ export default function FolderDetailPage() {
       setDocuments((docs: DocumentItem[]) => docs.filter((d: DocumentItem) => d.id !== doc.id));
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete document' });
+    }
+  };
+
+  // Selection helpers (SUPER_ADMIN bulk actions)
+  const toggleSelect = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const copy = new Set(prev);
+      if (checked) copy.add(id); else copy.delete(id);
+      return copy;
+    });
+  };
+
+  const allIds = documents.map((d) => d.id);
+  const allSelected = selectedIds.size > 0 && selectedIds.size === documents.length;
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(allIds) : new Set());
+  };
+
+  const bulkDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected document(s)? This cannot be undone.`)) return;
+    try {
+      const res = await fetch('/api/documents/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({} as any));
+        throw new Error((data as any)?.message || 'Bulk delete failed');
+      }
+      setDocuments((prev: DocumentItem[]) => prev.filter((d) => !selectedIds.has(d.id)));
+      setSelectedIds(new Set());
+      toast({ title: 'Deleted', description: 'Selected documents removed' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete selected documents';
+      toast({ variant: 'destructive', title: 'Error', description: msg });
     }
   };
 
@@ -225,6 +275,22 @@ export default function FolderDetailPage() {
           <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('list')}>
             <List className="h-4 w-4" />
           </Button>
+          {user?.role === 'SUPER_ADMIN' && (
+            <>
+              <div className="flex items-center gap-1 ml-2">
+                <Checkbox id="selectAll" checked={allSelected} onCheckedChange={(v) => toggleSelectAll(!!v)} />
+                <label htmlFor="selectAll" className="text-sm">Select all</label>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={selectedIds.size === 0}
+                onClick={bulkDeleteSelected}
+              >
+                <Trash2 className="h-4 w-4 mr-1" /> Delete selected ({selectedIds.size})
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -236,15 +302,27 @@ export default function FolderDetailPage() {
             <Card key={doc.id} className="hover:shadow-md transition-shadow overflow-hidden">
               <CardHeader className="pb-2 sm:pb-3">
                 <div className="relative flex items-start sm:items-center justify-between gap-1 sm:gap-2">
-                  <div className="min-w-0 flex-1 pr-9 sm:pr-0">
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <div className="min-w-0 flex-1 pr-12 sm:pr-12">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      {user?.role === 'SUPER_ADMIN' && (
+                        <Checkbox
+                          checked={selectedIds.has(doc.id)}
+                          onCheckedChange={(v) => toggleSelect(doc.id, !!v)}
+                          className="mr-1"
+                        />
+                      )}
                       <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">{getTypeShortLabel(doc.fileType)}</Badge>
-                      <p className="text-sm font-medium whitespace-normal break-words pr-2" title={doc.originalName}>{doc.originalName}</p>
                     </div>
+                    <p
+                      className="mt-1 text-sm font-medium truncate pr-2 leading-snug block min-w-0"
+                      title={doc.originalName}
+                    >
+                      {shortenFileName(doc.originalName)}
+                    </p>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-7 w-7 sm:static sm:h-8 sm:w-8">
+                      <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-7 w-7 z-10 sm:static sm:h-8 sm:w-8">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -300,9 +378,15 @@ export default function FolderDetailPage() {
               {documents.map((doc) => (
                 <div key={doc.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    {user?.role === 'SUPER_ADMIN' && (
+                      <Checkbox
+                        checked={selectedIds.has(doc.id)}
+                        onCheckedChange={(v) => toggleSelect(doc.id, !!v)}
+                      />
+                    )}
                     {getFileIcon(doc.fileType)}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{doc.originalName}</p>
+                      <p className="text-sm font-medium truncate" title={doc.originalName}>{shortenFileName(doc.originalName)}</p>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
                         <span>{formatFileSize(doc.fileSize)}</span>
                         <span>{formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true })}</span>
