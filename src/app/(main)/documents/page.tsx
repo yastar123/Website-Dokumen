@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import DocumentThumbnail from "@/components/documents/document-thumbnail";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Search,
   Download,
@@ -31,7 +33,8 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  MoreVertical
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -266,6 +269,16 @@ export default function DocumentsPage() {
     return 'Document';
   };
 
+  // Short type label for badges to avoid long MIME strings on small screens
+  const getTypeShortLabel = (fileType: string) => {
+    if (!fileType) return 'File';
+    if (fileType === 'application/pdf') return 'PDF';
+    if (fileType.startsWith('image/')) return 'Image';
+    if (fileType.includes('word')) return 'Word';
+    if (fileType.includes('excel') || fileType.includes('spreadsheet')) return 'Excel';
+    return 'File';
+  };
+
   const clearFilters = () => {
     setSearchQuery("");
     setFileTypeFilter("");
@@ -451,70 +464,63 @@ export default function DocumentsPage() {
       ) : (
         <>
           {viewMode === "grid" ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2 sm:gap-3">
               {documents.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-2 min-w-0 flex-1">
-                        {getFileIcon(doc.fileType)}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate" title={doc.originalName}>
-                            {doc.originalName}
-                          </p>
-                          <Badge variant="secondary" className="text-xs mt-1">
-                            {getFileTypeLabel(doc.fileType)}
-                          </Badge>
+                <Card key={doc.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <div className="relative flex items-start sm:items-center justify-between gap-1 sm:gap-2">
+                      <div className="min-w-0 flex-1 pr-9 sm:pr-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                          <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">{getTypeShortLabel(doc.fileType)}</Badge>
+                          <p className="text-sm font-medium whitespace-normal break-words pr-2" title={doc.originalName}>{doc.originalName}</p>
                         </div>
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-7 w-7 sm:static sm:h-8 sm:w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={4} className="w-44">
+                          <DropdownMenuItem onClick={() => setPreviewDoc(doc)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>Preview</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(doc)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>Download</span>
+                          </DropdownMenuItem>
+                          {user?.role === 'SUPER_ADMIN' && (
+                            <DropdownMenuItem onClick={() => renameDocument(doc)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              <span>Rename</span>
+                            </DropdownMenuItem>
+                          )}
+                          {user?.role === 'SUPER_ADMIN' && (
+                            <DropdownMenuItem onClick={() => deleteDocument(doc)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center space-x-1">
-                          <HardDrive className="h-3 w-3" />
-                          <span>{formatFileSize(doc.fileSize)}</span>
+                    {/* Visual thumbnail preview like Google Drive */}
+                    <DocumentThumbnail doc={doc as any} className="mb-2 sm:mb-3" />
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex flex-col gap-1.5 sm:gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground">
+                        <div className="hidden sm:flex items-center space-x-1">
+                          <FolderOpen className="h-3 w-3" />
+                          <span>{doc.folder?.name ?? '—'}</span>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3" />
+                          <FileText className="h-3 w-3" />
                           <span>{formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true })}</span>
                         </div>
                       </div>
-
-                      {doc.folder && (
-                        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                          <FolderOpen className="h-3 w-3" />
-                          <span>{doc.folder.name}</span>
-                        </div>
-                      )}
-
-                      {user?.role === 'SUPER_ADMIN' && (
-                        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                          <User className="h-3 w-3" />
-                          <span>{doc.uploadedBy.name}</span>
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center pt-2">
-                        <Button variant="outline" size="sm" onClick={() => handleDownload(doc)}>
-                          <Download className="h-3 w-3 mr-1" />
-                          Download
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)}>
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        {user?.role === 'SUPER_ADMIN' && (
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => renameDocument(doc)} title="Rename">
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => deleteDocument(doc)} title="Delete">
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                      <div className="flex justify-between items-center pt-1 sm:pt-2 gap-2 flex-wrap"></div>
                     </div>
                   </CardContent>
                 </Card>

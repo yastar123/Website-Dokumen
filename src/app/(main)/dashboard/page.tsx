@@ -87,7 +87,7 @@ export default function DashboardPage() {
   const renderPreview = () => {
     if (!previewDoc) return null;
     const anyDoc: any = previewDoc as any;
-    const src: string | null = anyDoc.filePath ? anyDoc.filePath : null;
+    const src: string | null = (anyDoc.filePath as string | undefined) || `/uploads/${anyDoc.filename || ''}`;
     const isImage = previewDoc.fileType.startsWith('image/');
     const isPdf = previewDoc.fileType === 'application/pdf';
     return (
